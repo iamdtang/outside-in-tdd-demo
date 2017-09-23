@@ -4,6 +4,8 @@ ember test -s
 
 ![0](0.png)
 
+## Feature 1: Data Transferred Metric
+
 User Story: As a user, I want to see the average data transferred over 7 days. When there is no data, I want to see a dash. This metric should be shown in the appropriate unit (B, KB, MB, GB, TB).
 
 ```js
@@ -12,14 +14,8 @@ moduleForAcceptance('Acceptance | dashboard');
 test('the user can see the average amount of data transferred', function(assert) {
   server.get('/api/data-transferred', function() {
     return [
-      {
-        timestamp: '2017-07-18T00:00:00Z',
-        bytes: 100
-      },
-      {
-        timestamp: '2017-07-19T00:00:00Z',
-        bytes: 200
-      }
+      { timestamp: '2017-07-18T00:00:00Z', bytes: 100 },
+      { timestamp: '2017-07-19T00:00:00Z', bytes: 200 }
     ];
   });
   page.visit();
@@ -152,7 +148,10 @@ Back to the expected error without any warnings.
 Program by wishful thinking
 
 ```hbs
-{{data-transferred timeSeries=model data-test-hook="data-transferred"}}
+<!-- templates/index.hbs -->
+{{data-transferred
+  timeSeries=model
+  data-test-hook="data-transferred"}}
 ```
 
 ![7](7.png)
@@ -259,3 +258,47 @@ At this point this where I'll continue in this inner TDD loop and test the diffe
 And if you run the acceptance test, it passes!
 
 ![12](12.png)
+
+## Feature 2: Data Transferred Chart
+
+```js
+test('the user can see a time series bar chart for the daily data transferred', function(assert) {
+  server.get('/api/data-transferred', function() {
+    return [
+      {
+        timestamp: '2017-07-18T00:00:00Z',
+        bytes: 100
+      },
+      {
+        timestamp: '2017-07-19T00:00:00Z',
+        bytes: 200
+      }
+    ];
+  });
+  page.visit();
+  andThen(function() {
+    assert.equal(page.yAxisLabel, 'Bytes of Data Transferred');
+    assert.equal(page.barCount, 2);
+  });
+});
+```
+
+![13](13.png)
+
+```js
+import {
+  create,
+  visitable,
+  text,
+  count
+} from 'ember-cli-page-object';
+
+export default create({
+  visit: visitable('/'),
+  dataTransferredMetric: text('[data-test-hook="data-transferred"]'),
+  yAxisLabel: text('[data-test-hook="data-transferred-chart"] .c3-axis-y-label'),
+  barCount: count('.c3-axis-x .tick')
+});
+```
+
+![14](14.png)
